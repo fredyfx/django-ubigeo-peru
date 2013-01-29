@@ -1,72 +1,96 @@
 # -*- coding: utf-8 -*-
 
 from django import forms
-from django.db import models
-from django.forms import ModelChoiceField
-from django.core.exceptions import ValidationError
-from widgets import UbigeoWidget
-from models import Ubigeo
-import constant
+from .widgets import UbigeoWidget
+from .models import Ubigeo
 
 
-class UbigeoFormField(forms.MultiValueField):
-
+class UbigeoField(forms.MultiValueField):
     def __init__(self, *args, **kwargs):
-        ubigeos = Ubigeo.objects.filter(parent__isnull=True)
-        regiones = ubigeos.exclude(ubigeo__startswith='9')
-        if 'ubigeo' in kwargs:
-            if kwargs['ubigeo'] == constant.ONLY_INTERNATIONAL:
-                regiones = regiones.filter(ubigeo__startswith='9')
-            elif kwargs['ubigeo'] == constant.ALL:
-                regiones = Ubigeo.objects.filter(parent__isnull=True)
-        provincias = Ubigeo.objects.filter(parent=regiones[0])
-        distritos  = Ubigeo.objects.filter(parent=provincias[0])
-        self.fields = (
-            ModelChoiceField(queryset=regiones),
-            ModelChoiceField(queryset=provincias),
-            ModelChoiceField(queryset=distritos),
-        )
-        self.widget = UbigeoWidget(
-                regiones = self.fields[0]._get_choices(),
-                provincias = self.fields[1]._get_choices(),
-                distritos = self.fields[2]._get_choices()
+        regions = Ubigeo.objects.filter(
+            political_division=Ubigeo.POLITICAL_DIVISION_CHOICES.REGION
             )
-        super(UbigeoFormField, self).__init__(
-                            self.fields,
-                            self.widget,
-                            *args
-                            )
+        provinces = Ubigeo.objects.none()
+        districts = Ubigeo.objects.none()
+
+        self.fields = (
+            forms.ModelChoiceField(
+                queryset=Ubigeo.objects.filter(
+                    political_division=Ubigeo.POLITICAL_DIVISION_CHOICES.REGION
+                    ),
+                empty_label=u"",
+                required=False),
+            forms.ModelChoiceField(
+                queryset=Ubigeo.objects.filter(
+                    political_division=Ubigeo.POLITICAL_DIVISION_CHOICES.PROVINCE
+                    ),
+                empty_label=u"",
+                required=False),
+            forms.ModelChoiceField(
+                queryset=Ubigeo.objects.filter(
+                    political_division=Ubigeo.POLITICAL_DIVISION_CHOICES.DISTRICT
+                    ),
+                empty_label=u"",
+                required=False,),
+            )
+
+
+        self.widget = UbigeoWidget(
+            self.fields[0]._get_choices(),
+            self.fields[1]._get_choices(),
+            self.fields[2]._get_choices(),
+            )
+        super(UbigeoField, self).__init__(
+            self.fields,
+            self.widget,
+            *args)
+
+
+    def clean(self, value):
+        """I know I shouldn't override this but, Fuck this shit.
+        """
+        if value is None:
+            return None
+        v1, v2, v3 = value
+        if not v3 in (None, u''):
+            return Ubigeo.objects.get(pk=v3)
+        elif not v2 in (None, u''):
+            return Ubigeo.objects.get(pk=v2)
+        elif not v1 in (None, u''):
+            return Ubigeo.objects.get(pk=v1)
 
     def compress(self, data_list):
         if data_list:
             return data_list[2]
         return None
 
-    def clean(self, value):
-        if value[2]:
-            distrito = Ubigeo.objects.get(pk=value[2])
-            self.fields[1].queryset = Ubigeo.objects.filter(
-                                parent=distrito.parent.parent
-                                )
-            self.fields[2].queryset = Ubigeo.objects.filter(parent=distrito.parent)
-            return distrito
-        return None
-
     def prepare_value(self, value):
         if value is None:
-            value=constant.DISTRICT_DEFAULT
-        distrito = Ubigeo.objects.get(pk=value[2] if isinstance(value,list) else value)
-        self.fields[1].queryset = Ubigeo.objects.filter(
-                            parent=distrito.parent.parent
-                            )
-        self.fields[2].queryset = Ubigeo.objects.filter(parent=distrito.parent)
-        self.widget.provincias = self.fields[1]._get_choices()
-        self.widget.distritos = self.fields[2]._get_choices()
-        self.widget.decompress(distrito)
+            return None
+        ubigeo = Ubigeo.objects.get(pk=value)
+        provinces = Ubigeo.objects.none()
+        districts = Ubigeo.objects.none()
+        regions = Ubigeo.objects.filter(
+                political_division=Ubigeo.POLITICAL_DIVISION_CHOICES.REGION,
+                )
+        if ubigeo.human_political_division == 'Region':
+            provinces = Ubigeo.objects.filter(
+                parent=ubigeo,
+                )
+        if ubigeo.human_political_division == 'Provincia':
+            provinces = Ubigeo.objects.filter(
+                parent=ubigeo.parent,
+                )
+        if ubigeo.human_political_division == 'Distrito':
+            provinces = Ubigeo.objects.filter(
+                parent=ubigeo.parent.parent,
+                )
+            districts = Ubigeo.objects.filter(
+                parent=ubigeo.parent,
+                )
+        self.fields[1].queryset = provinces
+        self.fields[2].queryset = districts
+        self.widget.provinces = self.fields[1]._get_choices()
+        self.widget.districts = self.fields[2]._get_choices()
+        self.widget.decompress(value)
         return value
-
-
-class UbigeoField(models.ForeignKey):
-
-    def __init__(self, *args, **kwargs):
-        super(UbigeoField, self).__init__(Ubigeo, *args, **kwargs)

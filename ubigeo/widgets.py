@@ -1,41 +1,50 @@
-from django.forms.widgets import Select, MultiWidget
-from models import Ubigeo
+# -*- coding: utf-8 -*-
 
-class UbigeoWidget(MultiWidget):
+from django.forms import widgets
+from .models import Ubigeo
 
-    def __init__(self, regiones, provincias, distritos):
-        self.regiones = regiones
-        self.provincias = provincias
-        self.distritos = distritos
-        widgets = (
-            Select(
-                choices = self.regiones,
-                attrs = {'onchange' : 'getProvincias(this.value, null, null);'}
+
+class UbigeoWidget(widgets.MultiWidget):
+
+    def __init__(self, regions, provinces, districts):
+        self.regions = regions
+        self.provinces = provinces
+        self.districts = districts
+        _widgets = (
+            widgets.Select(
+                choices = self.regions,
             ),
-            Select(
-                choices = self.provincias,
-                attrs = {'onchange' : 'getDistritos(this.value, null);'}
+            widgets.Select(
+                choices = Ubigeo.objects.none(),
             ),
-            Select(
-                choices = self.distritos
+            widgets.Select(
+                choices = Ubigeo.objects.none(),
             )
         )
-        super(UbigeoWidget, self).__init__(widgets)
+        super(UbigeoWidget, self).__init__(_widgets)
 
     def decompress(self, value):
         if value:
             ubigeo = value if isinstance(value, Ubigeo) else Ubigeo.objects.get(
-                ubigeo = value
+                pk = value
                 )
-            self.widgets[1] = Select(
-                choices=((u[0], u[1]) for u in self.provincias),
-                attrs = {'onchange' : 'getDistritos(this.value);'}
+            self.widgets[1] = widgets.Select(
+                choices=((u[0], u[1]) for u in self.provinces),
                 )
-            self.widgets[2] = Select(
-                choices = ((u[0], u[1]) for u in self.distritos))
-            return (ubigeo.parent.parent.ubigeo,
-                ubigeo.parent.ubigeo,
-                ubigeo.ubigeo)
+            self.widgets[2] = widgets.Select(
+                choices = ((u[0], u[1]) for u in self.districts))
+            if ubigeo.human_political_division == 'Region':
+                return (ubigeo.id,
+                    None,
+                    None)
+            if ubigeo.human_political_division == 'Provincia':
+                return (ubigeo.parent.id,
+                    ubigeo.id,
+                    None)
+            if ubigeo.human_political_division == 'Distrito':
+                return (ubigeo.parent.parent.id,
+                    ubigeo.parent.id,
+                    ubigeo.id)
         return (None, None, None)
 
     class Media:
