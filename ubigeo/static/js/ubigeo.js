@@ -52,16 +52,3 @@ function getDistritosFactory(district_selector){
         $.getJSON(url, handler);
     };
 };
-
-
-$(document).ready(function(){
-    var getProvincias = getProvinciasFactory("#id_location_1", "#id_location_2");
-    var getDistritos = getDistritosFactory("#id_location_2");
-
-    $('#id_location_0').on('change', function(){
-        getProvincias(this.value);
-    });
-    $('#id_location_1').on('change', function(){
-        getDistritos(this.value);
-    });
-});
