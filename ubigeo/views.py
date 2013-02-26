@@ -5,6 +5,23 @@ from django.http import HttpResponse
 from .models import Ubigeo
 
 
+def region(request):
+    regiones = Ubigeo.objects.filter(
+            parent=None
+            ).order_by('name')
+
+    if regiones:
+        data = serializers.serialize("json",
+                                  regiones,
+                                  ensure_ascii=False,)
+    else:
+        data = '[]'
+                            
+    return HttpResponse(
+        data,
+        mimetype='application/json')
+
+
 def provincia(request):
     parent_id=request.GET.get('region_id')
     if parent_id:
