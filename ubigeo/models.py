@@ -3,14 +3,15 @@
 from django.db import models
 from .helpers import Enumeration
 
+
 class Ubigeo(models.Model):
-    name = models.TextField()
+
     POLITICAL_DIVISION_CHOICES = Enumeration([
         (1, 'REGION', "Region"),
         (2, 'PROVINCE', "Provincia"),
-        (3, 'DISTRICT', "Distrito"),
-        ])
+        (3, 'DISTRICT', "Distrito")])
 
+    name = models.TextField()
     political_division = models.PositiveSmallIntegerField(choices=POLITICAL_DIVISION_CHOICES,)
     parent = models.ForeignKey('Ubigeo', null=True)
 
@@ -39,10 +40,9 @@ class Ubigeo(models.Model):
             return u"%s de %s" % (ubigeo.human_political_division,
                                   ubigeo.name,)
         else:
-            return  u"%s de %s en la %s" % (ubigeo.human_political_division,
-                                         ubigeo.name,
-                                         Ubigeo.qualified_name(ubigeo.parent),)
-
+            return u"%s de %s en la %s" % (ubigeo.human_political_division,
+                                           ubigeo.name,
+                                           Ubigeo.qualified_name(ubigeo.parent),)
 
     def __eq__(self, other):
         """Comparar name con name y parents
@@ -64,7 +64,7 @@ class Ubigeo(models.Model):
         if code.pk[0:2] == "00":
             return "No idea U_U'"
         elif code.pk[2:4] == "00":
-            return "Departamento"
+            return "Region"
         elif code.pk[4:6] == "00":
             return "Provincia"
         else:
@@ -76,3 +76,10 @@ class Ubigeo(models.Model):
         if self.parent is None and self.political_divison != 1:
             raise ValidationError("Only Regions can have no parent.")
 
+    @staticmethod
+    def get_ubigeo_map(ubigeo=None, map_ubigeo=[]):
+        map_ubigeo[ubigeo.human_political_division.lower()] = self.name
+        if ubigeo.parent:
+            Ubigeo.get_ubigeo_map(ubigeo.parent, map_ubigeo)
+
+        return ubigeo
