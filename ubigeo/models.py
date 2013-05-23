@@ -78,7 +78,7 @@ class Ubigeo(models.Model):
 
     @staticmethod
     def get_ubigeo_map(ubigeo=None, map_ubigeo=[]):
-        map_ubigeo[ubigeo.human_political_division.lower()] = self.name
+        map_ubigeo[ubigeo.human_political_division.lower()] = ubigeo.name
         if ubigeo.parent:
             Ubigeo.get_ubigeo_map(ubigeo.parent, map_ubigeo)
 
