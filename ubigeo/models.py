@@ -77,7 +77,7 @@ class Ubigeo(models.Model):
             raise ValidationError("Only Regions can have no parent.")
 
     @staticmethod
-    def get_ubigeo_map(ubigeo=None, map_ubigeo=[]):
+    def get_ubigeo_map(ubigeo=None, map_ubigeo={}):
         map_ubigeo[ubigeo.human_political_division.lower()] = ubigeo.name
         if ubigeo.parent:
             Ubigeo.get_ubigeo_map(ubigeo.parent, map_ubigeo)
