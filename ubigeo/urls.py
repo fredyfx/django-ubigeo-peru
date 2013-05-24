@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ubigeo.views',
     url(r'^region/json/$', 'region', name='ubigeo-region-json'),
