@@ -77,6 +77,8 @@ class Ubigeo(models.Model):
             if ubigeo.parent:
                 Ubigeo.get_ubigeo_map(ubigeo.parent, map_ubigeo)
 
+            map_ubigeo['id'] = ubigeo.id
+
         return map_ubigeo
 
     def clean(self):
