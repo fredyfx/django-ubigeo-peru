@@ -48,7 +48,6 @@ class UbigeoField(forms.MultiValueField):
             self.widget,
             *args)
 
-
     def clean(self, value):
         """I know I shouldn't override this but, Fuck this shit.
         """
@@ -71,3 +70,16 @@ class UbigeoField(forms.MultiValueField):
             elif data_list[0]:
                 return data_list[0]
         return None
+
+    def prepare_value(self, value):
+        if value is None:
+            return None
+        r, p, d = value
+        self.fields[1].queryset = Ubigeo.objects.filter(
+            parent=r
+        )
+        self.fields[2].queryset = Ubigeo.objects.filter(parent=p)
+        self.widget.provincias = self.fields[1]._get_choices()
+        self.widget.distritos = self.fields[2]._get_choices()
+        self.widget.decompress(d)
+        return value
