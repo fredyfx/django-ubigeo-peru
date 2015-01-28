@@ -75,10 +75,16 @@ class UbigeoField(forms.MultiValueField):
         if value is None:
             return None
         r, p, d = value
-        self.fields[1].queryset = Ubigeo.objects.filter(
-            parent=r
-        )
-        self.fields[2].queryset = Ubigeo.objects.filter(parent=p)
+        if r:
+            self.fields[1].queryset = Ubigeo.objects.filter(
+                parent=r
+            )
+        else:
+            self.fields[1].queryset = None
+        if p:
+            self.fields[2].queryset = Ubigeo.objects.filter(parent=p)
+        else:
+            self.fields[2].queryset = None
         self.widget.provincias = self.fields[1]._get_choices()
         self.widget.distritos = self.fields[2]._get_choices()
         self.widget.decompress(d)
