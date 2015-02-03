@@ -33,11 +33,9 @@ class UbigeoWidget(widgets.MultiWidget):
         for the select widget
         """
         if value:
+            if not type(value) is int:
+                value = value.pk
             ubigeo = Ubigeo.objects.get(pk=value)
-            # if isinstance(value, Ubigeo):
-            #     ubigeo = value 
-            # else:
-            #     ubigeo = Ubigeo.objects.get(pk=value)
 
             if ubigeo.human_political_division == 'Region':
                 region_choices = [(u.pk, u.name) \
@@ -86,7 +84,6 @@ class UbigeoWidget(widgets.MultiWidget):
         return (None, None, None)
 
     class Media:
-        js=(
-            'js/jquery.js',
+        js = (
             'js/ubigeo.js',
         )

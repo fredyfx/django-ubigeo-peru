@@ -74,7 +74,13 @@ class UbigeoField(forms.MultiValueField):
     def prepare_value(self, value):
         if value is None:
             return None
-        r, p, d = value
+        if type(value) is tuple or type(value) is list:
+            r, p, d = value
+        elif type(value) is int:
+            u = Ubigeo.objects.get(pk=value)
+            r, p, d = (u.parent.parent, u.parent, u)
+        else:
+            r, p, d = (0, 0, 0)
         if r:
             self.fields[1].queryset = Ubigeo.objects.filter(
                 parent=r
