@@ -33,7 +33,7 @@ class UbigeoWidget(widgets.MultiWidget):
         for the select widget
         """
         if value:
-            if not type(value) is int:
+            if isinstance(value, Ubigeo):
                 value = value.pk
             ubigeo = Ubigeo.objects.get(pk=value)
 
@@ -82,8 +82,3 @@ class UbigeoWidget(widgets.MultiWidget):
                     ubigeo.parent.id,
                     ubigeo.id)
         return (None, None, None)
-
-    class Media:
-        js = (
-            'js/ubigeo.js',
-        )
